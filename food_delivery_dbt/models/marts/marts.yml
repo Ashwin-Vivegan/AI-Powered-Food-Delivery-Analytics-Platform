@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: mart_food_popularity
+    columns:
+      - name: food_id
+        data_tests:
+          - not_null
+
+  - name: mart_restaurant_performance
+    columns:
+      - name: restaurant_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: mart_menu_pricing
+    columns:
+      - name: food_id
+        data_tests:
+          - not_null
+      - name: menu_price
+        data_tests:
+          - not_null
+
+  - name: mart_review_analytics
+    columns:
+      - name: restaurant_id
+        data_tests:
+          - not_null
+          - unique

@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: int_order_item_enriched
+    description: "Order items enriched with food and restaurant details."
+
+    columns:
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: order_id
+        data_tests:
+          - not_null
+
+      - name: food_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_food')
+                field: food_id
+
+      - name: restaurant_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_restaurant')
+                field: restaurant_id
