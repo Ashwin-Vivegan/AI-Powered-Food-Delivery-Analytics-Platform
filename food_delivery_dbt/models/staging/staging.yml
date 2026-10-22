@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: stg_food
+    columns:
+      - name: food_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_restaurant
+    columns:
+      - name: restaurant_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_order_items
+    columns:
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_reviews
+    columns:
+      - name: review_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_users
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - unique
