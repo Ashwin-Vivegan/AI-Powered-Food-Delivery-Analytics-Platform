@@ -1,0 +1,14 @@
+
+version: 2
+
+sources:
+  - name: raw
+    database: FOOD_DELIVERY_DB
+    schema: RAW
+    tables:
+      - name: raw_food
+      - name: raw_menu
+      - name: raw_restaurant
+      - name: raw_order_items
+      - name: raw_reviews
+      - name: raw_users
