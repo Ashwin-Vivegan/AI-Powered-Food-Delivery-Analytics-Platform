@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+groq
+snowflake-connector-python
+python-dotenv
+pydantic-settings
+numpy
+sqlglot
+sentence-transformers
