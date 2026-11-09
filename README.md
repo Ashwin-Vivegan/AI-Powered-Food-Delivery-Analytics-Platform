@@ -1,23 +1,28 @@
 # AI-Powered Food Delivery Analytics Platform
 
-An end-to-end data engineering and AI analytics platform that transforms food delivery data into analytics-ready datasets using AWS S3, Snowflake, dbt, and Apache Airflow. The project implements cloud data ingestion, warehouse transformations, data-quality testing, and workflow orchestration, with planned extensions for LLM-powered analytics and natural-language querying.
+An end-to-end data engineering and AI analytics platform that transforms raw food delivery data into analytics-ready datasets and enables users to explore business insights through natural-language questions.
+
+Built using **AWS S3, Snowflake, dbt, Apache Airflow, FastAPI, RAG, Groq, SQLGlot, Streamlit and Docker**.
 
 ## Project Overview
 
-Food delivery platforms generate large volumes of data about restaurants, menus, food items, orders, users, and customer reviews. This project builds a data pipeline that ingests raw datasets, loads them into a cloud data warehouse, transforms them into useful analytical models, and orchestrates the workflow using Apache Airflow.
+Food delivery platforms generate large volumes of data about restaurants, menus, food items, orders, users and customer reviews. Extracting meaningful insights from this data requires reliable ingestion, transformation, orchestration and analytics.
 
-The current implementation includes:
-- AWS S3 for raw data storage.
-- Snowflake for cloud data warehousing and RAW-layer ingestion.
-- dbt Core for SQL-based transformations, intermediate models, analytics marts, and data-quality tests.
-- Apache Airflow for orchestrating the ingestion and transformation workflow.
-- Docker Compose for running Airflow locally.
+This project implements a complete data engineering pipeline alongside an AI-powered analytics interface.
 
-The next stage will introduce an LLM-powered analytics interface, followed by a Streamlit application and production deployment.
+The platform allows users to:
+- Ingest raw food delivery datasets into AWS S3.
+- Load and transform data in Snowflake using dbt.
+- Orchestrate ingestion and transformation workflows using Apache Airflow.
+- Ask analytical questions in natural language.
+- Retrieve metric definitions and analytical documentation using RAG.
+- Generate and validate SQL using an LLM.
+- Execute approved read-only queries against Snowflake.
+- View answers, generated SQL and query results through Streamlit.
 
 ## Architecture
 
-### Implemented architecture
+### Data Engineering Pipeline
 
 ```text
 Source CSV Datasets
@@ -29,30 +34,61 @@ Source CSV Datasets
       AWS S3
         |
         v
-Snowflake Storage Integration
-        |
-        v
  Snowflake External Stage
         |
         v
   Snowflake RAW Tables
         |
         v
-     dbt Core
+      dbt Core
         |
         +--> Staging Models
         |
-        +--> Intermediate Model
+        +--> Intermediate Models
         |
         +--> Analytics Marts
         |
         v
-   Data-Quality Tests
+   Data Quality Tests
 ```
 
-Apache Airflow orchestrates the workflow by validating the Snowflake stage, executing the RAW data-loading SQL, and running `dbt build`.
+Apache Airflow orchestrates the Snowflake ingestion and dbt transformation workflow.
 
-### Target architecture
+### AI Analytics Architecture
+
+```text
+       User Question
+              |
+              v
+       Streamlit UI
+              |
+              v
+          FastAPI
+              |
+       +------+------+
+       |             |
+       v             v
+      RAG       Text-to-SQL
+       |             |
+       v             v
+ Local Knowledge   Groq LLM
+     Base              |
+       |               v
+       v          SQLGlot Validation
+   Groq LLM             |
+       |                v
+       v          Read-only Snowflake
+   AI Answer            |
+                        v
+                  Query Results
+                        |
+                        v
+                   Streamlit UI
+```
+
+RAG retrieves relevant analytics documentation and metric definitions. Text-to-SQL generates queries using the available analytical models, validates them and executes approved read-only SQL against Snowflake.
+
+### Overall Architecture
 
 ```text
 AWS S3
@@ -61,101 +97,103 @@ AWS S3
 Snowflake RAW Layer
    |
    v
-dbt Staging, Intermediate Models and Marts
+dbt Transformations
    |
    v
-Apache Airflow Orchestration
+Analytics Marts
    |
-   v
-LLM Analytics
-   |
-   +--> Retrieval-Augmented Generation (RAG)
-   |
-   +--> Text-to-SQL
-   |
-   v
-Streamlit Application
-   |
-   v
-Production Deployment and Monitoring
+   +--------------------+
+   |                    |
+   v                    v
+Apache Airflow       FastAPI AI
+Orchestration        Analytics
+                        |
+                +-------+-------+
+                |               |
+                v               v
+               RAG          Text-to-SQL
+                                |
+                                v
+                           Snowflake
+                                |
+                                v
+                            Streamlit
 ```
 
-The AI, user interface, and production deployment components are planned extensions and are not yet implemented.
+Airflow manages the data pipeline independently of the interactive analytics application.
 
 ## Technology Stack
 
 | Category | Technologies |
 |---|---|
-| Programming language | Python |
-| Cloud storage | Amazon S3 |
-| Data warehouse | Snowflake |
-| Data ingestion | Snowflake external stage, `COPY INTO`, Python |
-| Data transformation | dbt Core, SQL |
-| Warehouse adapter | dbt-snowflake |
-| Workflow orchestration | Apache Airflow |
-| Containerization | Docker, Docker Compose, WSL2 |
-| Airflow services | PostgreSQL, Redis, CeleryExecutor |
-| Configuration | Environment variables, `.env` |
-| Version control | Git, GitHub |
-| Planned AI layer | LLM, RAG, Text-to-SQL |
-| Planned interface | Streamlit |
+| Programming Language | Python, SQL |
+| Cloud Storage | Amazon S3 |
+| Data Warehouse | Snowflake |
+| Data Ingestion | Python, boto3, Snowflake COPY INTO |
+| Data Transformation | dbt Core, dbt-snowflake |
+| Workflow Orchestration | Apache Airflow |
+| AI / LLM | Groq |
+| Retrieval-Augmented Generation | Sentence Transformers, FAISS-style vector similarity retrieval |
+| Embedding Model | all-MiniLM-L6-v2 |
+| Text-to-SQL Validation | SQLGlot |
+| Backend | FastAPI |
+| Frontend | Streamlit |
+| Containerization | Docker, Docker Compose |
+| Testing | pytest, dbt tests |
+| Version Control | Git, GitHub |
+| Development Environment | Windows, WSL2 |
 
 ## Project Structure
 
 ```text
 AI-Powered-Food-Delivery-Analytics-Platform/
-├── data/
-│   └── raw/                              # Local source CSVs (Git-ignored)
-├── scripts/
-│   ├── inspect_data.py                   # Inspect source datasets
-│   ├── upload_to_s3.py                   # Upload datasets to S3
-│   ├── snowflake_connection_test.py      # Test Snowflake connectivity
-│   ├── execute_sql.py                    # Execute SQL files through Python
-│   └── check_snowflake_stage.py          # Validate expected staged CSV files
-├── sql/
-│   ├── create_raw_tables.sql             # Create RAW tables
-│   └── load_raw_data.sql                 # Load files using COPY INTO
+|
+├── ai_service/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── schemas.py
+│   │   ├── planner.py
+│   │   ├── sql_generator.py
+│   │   ├── snowflake_executor.py
+│   │   ├── retriever.py
+│   │   └── knowledge_answer.py
+│   ├── knowledge/
+│   │   └── analytics_catalog.md
+│   ├── tests/
+│   ├── requirements.txt
+│   └── Dockerfile
+|
+├── streamlit_app/
+│   ├── app.py
+│   ├── requirements.txt
+│   └── Dockerfile
+|
+├── airflow/
+│   ├── dags/
+│   ├── dbt_profiles/
+│   ├── Dockerfile
+│   └── docker-compose.yaml
+|
 ├── food_delivery_dbt/
-│   ├── dbt_project.yml
 │   ├── models/
 │   │   ├── staging/
-│   │   │   ├── _sources.yml
-│   │   │   ├── staging.yml
-│   │   │   ├── stg_food.sql
-│   │   │   ├── stg_menu.sql
-│   │   │   ├── stg_restaurant.sql
-│   │   │   ├── stg_order_items.sql
-│   │   │   ├── stg_reviews.sql
-│   │   │   └── stg_users.sql
 │   │   ├── intermediate/
-│   │   │   ├── int_order_item_enriched.sql
-│   │   │   └── intermediate.yml
 │   │   └── marts/
-│   │       ├── mart_food_popularity.sql
-│   │       ├── mart_restaurant_performance.sql
-│   │       ├── mart_menu_pricing.sql
-│   │       ├── mart_review_analytics.sql
-│   │       └── marts.yml
-│   ├── analyses/
-│   ├── macros/
-│   ├── seeds/
-│   ├── snapshots/
+│   ├── dbt_project.yml
 │   └── tests/
-├── airflow/
-│   ├── Dockerfile
-│   ├── docker-compose.yaml
-│   ├── dags/
-│   │   ├── food_delivery_pipeline.py
-│   │   └── food_delivery_pipeline_smoke_test.py
-│   └── dbt_profiles/
-│       └── profiles.yml
+|
+├── scripts/
+├── sql/
+├── data/
+├── .dockerignore
 ├── .env.example
 ├── .gitignore
+├── compose.yaml
 ├── requirements.txt
 └── README.md
 ```
 
-Local environment files, raw datasets, generated logs, and generated Airflow configuration are excluded from version control.
+Local datasets, environment files, generated artifacts and credentials are excluded from version control.
 
 ## Source Datasets
 
@@ -163,14 +201,14 @@ The project uses six CSV datasets:
 
 | Dataset | Description |
 |---|---|
-| `food.csv` | Food identifiers, item names, and vegetarian classification |
-| `menu.csv` | Menu identifiers, restaurant and food references, cuisine, and prices |
-| `restaurant.csv` | Restaurant names, cities, ratings, costs, cuisines, and additional details |
-| `order_items.csv` | Order-item identifiers, order references, food and restaurant references, prices, quantities, and line amounts |
-| `reviews.csv` | Review records, order and user references, ratings, comments, and dates |
-| `users.csv` | User identifiers and demographic attributes |
+| food.csv | Food identifiers, names and classifications |
+| menu.csv | Menu records, restaurant references, food references and prices |
+| restaurant.csv | Restaurant details, cities, ratings and costs |
+| order_items.csv | Order-item references, quantities, prices and line amounts |
+| reviews.csv | Review records, ratings, comments and dates |
+| users.csv | User identifiers and demographic attributes |
 
-**Dataset limitation:** The source data does not include an `orders.csv` file. Order-level activity is therefore derived from `order_items.csv`. Missing attributes such as delivery times and order statuses are not invented.
+**Dataset limitation:** The source data does not include an `orders.csv` file. Order-level activity is derived from `order_items.csv`. Delivery times and order statuses are not available and are not fabricated.
 
 ---
 
@@ -178,14 +216,11 @@ The project uses six CSV datasets:
 
 **Status: Completed**
 
-### Implementation
-
-- Created an Amazon S3 bucket in the `ap-south-1` (Mumbai) region.
-- Configured S3 Block Public Access.
-- Enabled server-side encryption using SSE-S3.
-- Uploaded all six CSV datasets to the `raw/` prefix.
-- Implemented Python-based uploads using `boto3`.
-- Configured local AWS authentication through the AWS CLI credential provider.
+- Created a private S3 bucket in the Mumbai region (`ap-south-1`).
+- Enabled S3 Block Public Access.
+- Configured SSE-S3 encryption.
+- Uploaded all six CSV datasets using Python and boto3.
+- Configured local AWS authentication through AWS CLI.
 
 ### S3 Configuration
 
@@ -196,336 +231,376 @@ The project uses six CSV datasets:
 | Prefix | `raw/` |
 | Access | Private |
 
-### Outcome
-
-The raw datasets are stored in S3 and available for controlled ingestion into Snowflake.
-
 ## Milestone 2 — Snowflake RAW Layer
 
 **Status: Completed**
 
-### Infrastructure
-
-- Created the `FOOD_DELIVERY_DB` database.
-- Created the `RAW` schema.
-- Configured the `FOOD_S3_INTEGRATION` storage integration.
-- Configured the associated AWS IAM role and access policy.
-- Created the external stage `FOOD_DELIVERY_DB.RAW.FOOD_S3_STAGE`.
-- Validated access to the S3 files from Snowflake.
-
-### Implementation
-
-- Developed a Python Snowflake connection test.
-- Implemented `scripts/execute_sql.py` for executing SQL files.
-- Created six RAW tables using `sql/create_raw_tables.sql`.
-- Loaded CSV datasets using `COPY INTO` statements in `sql/load_raw_data.sql`.
-- Used explicit column mappings to accommodate extra source index columns.
-- Excluded direct identifiers and the source password column from the loaded `RAW_USERS` table.
+- Created `FOOD_DELIVERY_DB` and the `RAW` schema.
+- Configured the AWS storage integration and external stage.
+- Created six RAW tables.
+- Loaded CSV datasets using Snowflake `COPY INTO`.
+- Used explicit column mappings.
+- Excluded direct identifiers and the source password column from `RAW_USERS`.
 
 ### Ingestion Results
 
-| RAW table | Rows |
+| RAW Table | Rows |
 |---|---:|
-| `RAW_FOOD` | 371,561 |
-| `RAW_MENU` | 1,179,936 |
-| `RAW_ORDER_ITEMS` | 22,998,179 |
-| `RAW_RESTAURANT` | 148,541 |
-| `RAW_REVIEWS` | 300,000 |
-| `RAW_USERS` | 100,000 |
+| RAW_FOOD | 371,561 |
+| RAW_MENU | 1,179,936 |
+| RAW_ORDER_ITEMS | 22,998,179 |
+| RAW_RESTAURANT | 148,541 |
+| RAW_REVIEWS | 300,000 |
+| RAW_USERS | 100,000 |
 | **Total** | **25,098,217** |
 
-### Validation
-
-- Verified the six RAW tables and their row counts.
-- Checked selected key columns for NULL values.
-- Confirmed that `NAME`, `EMAIL`, and `PASSWORD` were absent from `RAW_USERS`.
-- Verified the uniqueness of loaded `ORDER_ITEM_ID` values.
-- Reran the loading script and observed that Snowflake skipped previously loaded files in this scenario.
-- Confirmed that row counts remained unchanged after the rerun.
-
-The rerun demonstrates Snowflake's file load-history behavior for the tested scenario. Recovery from partial failures and broader idempotency testing remain opportunities for improvement.
+Validated table counts, selected NULL checks, identifier uniqueness and repeated-load behavior.
 
 ## Milestone 3 — dbt Staging Transformations
 
-**Status: Completed and verified**
+**Status: Completed**
 
-### Objective
+Implemented six staging models:
 
-Create a maintainable SQL transformation layer between the Snowflake RAW tables and downstream analytical models.
+- `stg_food`
+- `stg_menu`
+- `stg_restaurant`
+- `stg_order_items`
+- `stg_reviews`
+- `stg_users`
 
-### Implementation
+Implemented:
+- Text cleaning and normalization.
+- Explicit data-type conversions.
+- NULL handling.
+- Source declarations.
+- Snowflake view materialization.
 
-- Installed dbt Core and the Snowflake adapter.
-- Initialized the `food_delivery_dbt` project.
-- Configured the dbt Snowflake profile.
-- Defined explicit source references in `models/staging/_sources.yml`.
-- Implemented six staging models.
-- Used `TRIM()` and `NULLIF()` to clean text fields and normalize empty strings.
-- Applied Snowflake conversion functions such as `TRY_TO_NUMBER`, `TRY_TO_DECIMAL`, and `TRY_TO_DATE` where appropriate.
-- Materialized staging models as Snowflake views.
-- Executed the models and verified their output using `dbt show`.
-
-### Staging Models
-
-| Model | Purpose |
-|---|---|
-| `stg_food` | Standardizes food identifiers, names, and food classifications |
-| `stg_menu` | Cleans menu data and converts prices into numeric values |
-| `stg_restaurant` | Standardizes restaurant identifiers, names, cities, ratings, costs, and details |
-| `stg_order_items` | Cleans order-item references, prices, quantities, and line amounts |
-| `stg_reviews` | Standardizes review identifiers, ratings, comments, and dates |
-| `stg_users` | Cleans demographic attributes while retaining the privacy-safe RAW schema |
-
-### Verification
-
-- Confirmed the dbt project parsed successfully.
-- Successfully built all six staging views.
-- Previewed transformed output using `dbt show`.
-- Verified that the staging models referenced the declared Snowflake sources.
-
-The staging layer provides standardized columns and more appropriate data types for subsequent analytics.
+Successfully parsed and built all six staging models.
 
 ## Milestone 4 — Intermediate Models and Analytics Marts
 
-**Status: Completed and data-quality tests passed**
-
-### Objective
-
-Transform cleaned staging data into reusable, business-oriented analytical datasets.
+**Status: Completed**
 
 ### Intermediate Model
 
-| Model | Purpose |
-|---|---|
-| `int_order_item_enriched` | Enriches order-item records with food names, food categories, and restaurant details |
+`int_order_item_enriched`
 
-The intermediate model uses dbt `ref()` dependencies and left joins to preserve unmatched order-item records.
+Enriches order-item records with food names, categories and restaurant details.
 
-### Join Validation
-
-The row count of the source staging model and enriched intermediate model was verified:
-
-| Model | Rows |
-|---|---:|
-| `stg_order_items` | 22,998,179 |
-| `int_order_item_enriched` | 22,998,179 |
-
-Additional checks returned no duplicate restaurant IDs or food IDs in the corresponding staging models for the tested queries.
-
-This validated the observed row-count preservation for the current dataset. The checks should be retained as part of ongoing data-quality monitoring.
+Verified that the staging and enriched models both contain 22,998,179 rows.
 
 ### Analytics Marts
 
 | Model | Purpose |
 |---|---|
-| `mart_food_popularity` | Aggregates order-item counts, distinct order counts, quantities sold, recorded line amounts, and average unit prices by food |
-| `mart_restaurant_performance` | Combines restaurant details with aggregated order-item metrics and review metrics |
-| `mart_menu_pricing` | Provides menu-level prices and food-level minimum, maximum, and average prices across menu records |
-| `mart_review_analytics` | Aggregates review counts, average review ratings, rating categories, and review date ranges |
+| `mart_food_popularity` | Food popularity, order-item counts, quantities and recorded revenue |
+| `mart_restaurant_performance` | Restaurant-level order-item and review metrics |
+| `mart_menu_pricing` | Menu-level pricing and food-level price statistics |
+| `mart_review_analytics` | Review counts, average ratings and review date ranges |
 
 ### Important Metric Definitions
 
-- `order_item_count` represents order-item records, not distinct orders.
-- `distinct_order_count` counts distinct order IDs associated with the food or restaurant.
-- `total_recorded_revenue` is calculated from the supplied `line_amount` field. It should be interpreted according to the source dataset's definition of that field.
-- `mart_menu_pricing` remains at menu-record grain; `food_id` is not expected to be unique in this mart.
-- The restaurant's listed rating is kept separate from the average rating calculated from its review records.
+- `order_item_count` counts order-item records, not distinct orders.
+- `distinct_order_count` counts distinct order IDs.
+- `total_recorded_revenue` is the sum of recorded `line_amount` values. It is not independently verified accounting revenue, profit or net sales.
+- `mart_menu_pricing` is maintained at menu-record grain.
+- Restaurant-listed ratings are kept separate from review-derived average ratings.
 
-### Data-Quality Tests
+### Data Quality
 
 Added dbt tests for:
-- Non-null and unique identifiers in selected staging models.
-- Unique order-item identifiers in the intermediate model.
-- Relationships from enriched order items to food and restaurant staging models.
-- Required identifiers and key constraints in the analytics marts.
+- Non-null and unique identifiers.
+- Order-item uniqueness.
+- Relationships between enriched records and source models.
+- Required identifiers and mart constraints.
 
-The combined `dbt test` suite completed successfully for the defined tests.
-
-### Verification
-
-- Successfully executed the intermediate model and all four marts.
-- Previewed model output in Snowflake.
-- Queried the menu pricing mart to verify populated pricing metrics.
-- Built the complete dbt project.
-- Ran the combined data-quality test suite with all defined tests passing.
+All configured dbt tests passed.
 
 ## Milestone 5 — Apache Airflow Orchestration
 
 **Status: Implemented and locally verified**
 
-### Objective
+Configured Apache Airflow 3.3.2 using Docker Compose.
 
-Orchestrate the existing Snowflake ingestion and dbt transformation workflow through Apache Airflow, providing task dependencies, retries, logs, and execution monitoring.
-
-### Infrastructure
-
-- Set up Apache Airflow using Docker Compose and Docker Desktop with WSL2 on Windows.
-- Created a custom image based on Apache Airflow `3.3.2`.
-- Installed dbt Core `1.12.6` and dbt-snowflake `1.12.4` in an isolated Python virtual environment inside the image.
-- Added the required Python dependencies for S3 and Snowflake integration.
-- Configured PostgreSQL as the Airflow metadata database and Redis with the CeleryExecutor.
-- Configured the dbt profile to use environment variables for Snowflake credentials.
-- Kept local secrets separate from the tracked project configuration.
+Implemented:
+- Custom Airflow Docker image.
+- PostgreSQL metadata database.
+- Redis and CeleryExecutor.
+- Isolated dbt environment.
+- Environment-based Snowflake configuration.
+- Manual DAG execution and task retries.
 
 ### Pipeline DAG
 
-The primary DAG is `food_delivery_data_pipeline`, which executes these tasks in dependency order:
+`food_delivery_data_pipeline`
 
 ```text
 check_pipeline_environment
-             |
-             v
+           |
+           v
 validate_snowflake_stage
-             |
-             v
+           |
+           v
 load_snowflake_raw_tables
-             |
-             v
+           |
+           v
 build_dbt_models_and_tests
 ```
 
-**Task responsibilities:**
+All four tasks were successfully executed.
 
-1. `check_pipeline_environment` — verifies required Snowflake environment variables are available without printing their values.
-2. `validate_snowflake_stage` — checks that the six expected CSV files are available in the Snowflake external stage.
-3. `load_snowflake_raw_tables` — executes the existing `sql/load_raw_data.sql` script through the Python SQL runner.
-4. `build_dbt_models_and_tests` — executes `dbt build`, including model builds and configured tests.
+A separate smoke-test DAG was also implemented and executed.
 
-The DAG is configured for manual execution with `schedule=None`. It includes retries and task dependency ordering.
+## Milestone 6 — AI-Powered Analytics
 
-A separate `food_delivery_pipeline_smoke_test` DAG was also created and successfully executed to verify task execution in the Airflow environment.
+**Status: Implemented and locally verified**
 
-### Validation
+Developed a FastAPI backend integrating Groq, local RAG retrieval and Snowflake analytics.
 
-- Confirmed that the Airflow services started and reached healthy status.
-- Verified the custom dbt-enabled Docker image.
-- Confirmed dbt and the Snowflake adapter were available inside the image.
-- Ran `dbt debug` successfully against the configured Snowflake connection.
-- Verified that all six expected CSV files were found in the Snowflake external stage.
-- Successfully executed all four tasks in `food_delivery_data_pipeline`.
-- Confirmed that the full DAG completed successfully.
+### RAG Implementation
 
-### Execution
+- Uses `sentence-transformers/all-MiniLM-L6-v2`.
+- Generates local 384-dimensional embeddings.
+- Retrieves relevant analytics documentation using cosine similarity.
+- Uses an analytics knowledge base containing mart definitions, metric definitions and data limitations.
+- Supplies retrieved context to the LLM for grounded answers.
 
-From the `airflow/` directory, start the local services:
+### Text-to-SQL
+
+Implemented a natural-language analytics workflow:
+
+1. Accepts a user's analytical question.
+2. Retrieves relevant schema and metric documentation.
+3. Uses Groq to generate a structured analytics plan.
+4. Generates SQL for supported questions.
+5. Validates SQL using SQLGlot and application-level rules.
+6. Executes approved read-only SQL against Snowflake.
+7. Returns results and generated SQL.
+
+### Security Controls
+
+- Dedicated `AI_ANALYTICS_READONLY` Snowflake role.
+- Approved analytics marts and column allowlists.
+- SELECT-only query validation.
+- Restrictions on joins, subqueries, CTEs and `SELECT *`.
+- Maximum 100 returned rows.
+- Query timeout configuration.
+
+### FastAPI Endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /` | API information |
+| `GET /health` | Health check |
+| `POST /api/v1/analytics/plan` | Generate an analytics plan |
+| `POST /api/v1/analytics/sql` | Generate and validate SQL |
+| `POST /api/v1/analytics/query` | Generate, validate and execute an analytics query |
+| `POST /api/v1/analytics/ask` | RAG-based knowledge question answering |
+
+### Testing
+
+Verified:
+- Metric-definition questions through RAG.
+- Supported natural-language analytics queries.
+- SQL generation and execution.
+- Unsupported questions being rejected when the required data is unavailable.
+
+## Milestone 7 — Streamlit Analytics Application
+
+**Status: Implemented and locally verified**
+
+Developed a Streamlit interface connected to FastAPI.
+
+### Features
+
+- Backend URL configuration.
+- API health checking.
+- RAG-based Ask AI interface.
+- Natural-language analytics query interface.
+- Generated SQL display.
+- Analytics plan display.
+- Query result tables using Pandas.
+- Error handling and unsupported-question feedback.
+
+### Verified Scenarios
+
+| Scenario | Result |
+|---|---|
+| Ask how total recorded revenue is calculated | Passed |
+| Find the top 10 food items by recorded revenue | Passed |
+| Ask about unavailable delivery-time metrics | Correctly rejected |
+| Calculate average review ratings by city | Passed |
+
+## Milestone 8 — Docker Containerization and Integration
+
+**Status: Implemented and locally verified**
+
+Containerized the FastAPI backend and Streamlit frontend.
+
+### Docker Components
+
+- `ai_service/Dockerfile`
+- `streamlit_app/Dockerfile`
+- Root `compose.yaml`
+- Root `.dockerignore`
+
+### Implementation
+
+- Used Python slim images.
+- Configured non-root application users.
+- Installed CPU-only PyTorch for the local embedding model.
+- Configured persistent Hugging Face model caching through a Docker volume.
+- Connected FastAPI and Streamlit through Docker Compose networking.
+- Configured API health checks.
+- Configured Streamlit to start after the API becomes healthy.
+
+### Run the Application
+
+From the project root:
 
 ```powershell
-docker compose up -d
+docker compose up -d --build
+```
+
+Check service status:
+
+```powershell
 docker compose ps
 ```
 
-Open the Airflow UI at `http://localhost:8080` and trigger `food_delivery_data_pipeline` manually.
+View logs:
 
-This Docker Compose environment is intended for local development and demonstration, not for production deployment.
+```powershell
+docker compose logs -f
+```
+
+Access the applications:
+
+- Streamlit: `http://localhost:8501`
+- FastAPI: `http://localhost:8000`
+- FastAPI Swagger: `http://localhost:8000/docs`
+- API health: `http://localhost:8000/health`
+
+Stop the application:
+
+```powershell
+docker compose down
+```
+
+The Dockerized application was tested with RAG, Text-to-SQL and unsupported analytics questions. Restart and persistence checks were also completed.
+
+**Note:** Airflow runs through its separate Docker Compose configuration under `airflow/`. It is not started by the root API/Streamlit Compose configuration.
 
 ---
 
 ## Security and Data Management
 
-- Keep `.env`, `airflow/pipeline.env`, and other credential files out of Git.
-- Never commit AWS credentials, Snowflake passwords, API keys, or Fernet keys.
-- Keep the S3 bucket private and restrict IAM access to the required resources and prefix.
-- Do not commit the raw CSV datasets.
-- The source `users.csv` contains personal information and a plaintext password-like column. Do not expose the raw file or load raw passwords into analytical tables.
-- Use environment-variable references in dbt profiles rather than hardcoded credentials.
-- Exclude generated Airflow logs and configuration and dbt-generated artifacts from version control.
-- Use least-privilege AWS and Snowflake roles for application access. The initial development environment uses administrative privileges that should be reduced before production deployment.
-- Do not use this local Docker Compose configuration as a public production deployment without additional hardening.
+- Keep `.env` and other credential files out of Git.
+- Never commit AWS credentials, Snowflake passwords, Groq API keys or Fernet keys.
+- Keep S3 private and restrict IAM permissions.
+- Do not commit raw CSV datasets.
+- Do not expose the source user dataset or its password-like field.
+- Use environment variables for Snowflake and application configuration.
+- Use the read-only Snowflake role for AI analytics queries.
+- Keep generated logs, caches and build artifacts out of version control.
+- Review permissions and harden configurations before public production deployment.
 
-## Local Setup
+The local Docker Compose setup is intended for development and demonstration, not as a production deployment configuration.
+
+## Local Development Setup
 
 ### Prerequisites
 
-- Python and pip
+- Python 3.13
 - AWS CLI
-- An AWS account with access to the configured S3 bucket
-- A Snowflake account with the required database and integration permissions
+- AWS account and configured S3 access
+- Snowflake account and configured database, stage and permissions
 - Docker Desktop and Docker Compose
 - Git
+- Groq API key
 
 ### 1. Clone the Repository
 
 ```powershell
 git clone https://github.com/Ashwin-Vivegan/AI-Powered-Food-Delivery-Analytics-Platform.git
+
 cd AI-Powered-Food-Delivery-Analytics-Platform
 ```
 
-### 2. Set Up the Python Environment
+### 2. Configure Environment Variables
+
+Create a local `.env` file using `.env.example` as the reference.
+
+Configure the required Snowflake connection details, Groq API key and other variables expected by the application.
+
+Never commit or share the actual `.env` file.
+
+### 3. Start FastAPI and Streamlit with Docker
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+docker compose up -d --build
 ```
 
-dbt dependencies are installed separately for local development:
+Verify:
 
 ```powershell
-python -m pip install dbt-core dbt-snowflake
+docker compose ps
 ```
 
-### 3. Configure Local Credentials
+Open Streamlit at `http://localhost:8501`.
 
-Create a local `.env` file based on `.env.example`, then supply the required Snowflake values.
+### 4. Run Airflow Separately
 
-For AWS operations, configure the AWS CLI credential provider. Never share or commit the contents of credential files.
+Configure the local Airflow environment files and dbt profile according to the provided examples and existing Airflow configuration.
 
-### 4. Run Snowflake Ingestion Scripts
-
-Create the RAW tables:
-
-```powershell
-python scripts/execute_sql.py sql/create_raw_tables.sql
-```
-
-Load the datasets:
-
-```powershell
-python scripts/execute_sql.py sql/load_raw_data.sql
-```
-
-These scripts depend on the previously configured Snowflake database, schema, integration, and external stage.
-
-### 5. Run dbt Transformations
-
-From the dbt project directory:
-
-```powershell
-cd food_delivery_dbt
-dbt debug
-dbt parse
-dbt build
-```
-
-The dbt profile must reference the correct Snowflake account and credentials through locally configured environment variables.
-
-### 6. Start Airflow
-
-From the repository's `airflow/` directory:
+From the `airflow/` directory:
 
 ```powershell
 docker compose up -d
 docker compose ps
 ```
 
-The local Airflow environment uses the custom Docker image and mounted project resources. The `airflow/pipeline.env` and local dbt profile must be configured before executing the full DAG.
+Open the Airflow UI at `http://localhost:8080`.
 
-## Roadmap
+Trigger `food_delivery_data_pipeline` manually.
+
+### 5. Run dbt Locally (Optional)
+
+Install dbt and the Snowflake adapter in your local Python environment, configure the dbt profile and run:
+
+```powershell
+cd food_delivery_dbt
+
+dbt debug
+dbt parse
+dbt build
+```
+
+## Current Project Status
 
 ### Completed
 
-- [x] Milestone 1: AWS S3 setup and raw dataset upload
-- [x] Milestone 2: Snowflake integration, external stage, RAW tables, loading, and initial validation
-- [x] Milestone 3: dbt project and six staging models
-- [x] Milestone 4: Intermediate model, four analytics marts, and passing configured dbt tests
-- [x] Milestone 5: Apache Airflow setup and successful end-to-end local pipeline execution
+- [x] Milestone 1: AWS S3 data ingestion
+- [x] Milestone 2: Snowflake RAW layer
+- [x] Milestone 3: dbt staging transformations
+- [x] Milestone 4: Intermediate models and analytics marts
+- [x] Milestone 5: Apache Airflow orchestration
+- [x] Milestone 6: RAG and Text-to-SQL analytics backend
+- [x] Milestone 7: Streamlit analytics interface
+- [x] Milestone 8: Docker containerization and local integration
 
-### Planned
+### Remaining Work
 
-- [ ] **Milestone 6: AI-Powered Analytics** — Integrate an LLM with governed access to the analytics models; implement RAG and validated Text-to-SQL.
-- [ ] **Milestone 7: Streamlit Application** — Build an interactive dashboard for food delivery analytics and natural-language queries.
-- [ ] **Milestone 8: Productionization and Deployment** — Configure CI/CD, secure secret management, hosted orchestration, application deployment, monitoring, alerting, reliability checks, evaluation, and cost controls.
+- [ ] Final clean-environment verification
+- [ ] Complete deployment of the API and Streamlit application
+- [ ] Production-ready secret management and configuration
+- [ ] Monitoring, logging and alerting
+- [ ] LLM evaluation and regression testing
+- [ ] Final deployment and operational documentation
 
 ## Project Goal
 
-The long-term goal is to create a complete food delivery analytics platform that combines cloud data engineering, SQL-based transformation, workflow orchestration, and AI-powered querying. The platform aims to make analytical insights more accessible while maintaining reliable data processing, clear metric definitions, and appropriate data security.
+The goal is to combine modern data engineering with AI-powered analytics to make business insights more accessible.
+
+By integrating reliable cloud ingestion, warehouse transformations, workflow orchestration, retrieval-augmented generation and validated natural-language SQL, the platform demonstrates an end-to-end approach to building an AI-enabled analytics system.
