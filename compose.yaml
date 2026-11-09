@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ai_service/Dockerfile
+    env_file:
+      - .env
+    environment:
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - huggingface_cache:/home/appuser/.cache/huggingface
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: streamlit_app/Dockerfile
+    environment:
+      API_BASE_URL: http://api:8000
+      PORT: "8501"
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  huggingface_cache:
